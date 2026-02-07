@@ -1,0 +1,394 @@
+{% extends "base.html" %}
+{% block title %}Chatbot{% endblock%}
+
+{% block content %}
+
+<style>
+  :root {
+    --black: #000000;
+    --tan: #94dd69ff;
+    --teal: #363e41ff;
+    --light-gray: #d3d3d3;
+    --purple: #94dd69b4;
+    --gradient: linear-gradient(90deg,rgba(0, 0, 0, 1) 0%, rgba(87, 199, 133, 1) 50%, rgba(148, 221, 105, 1) 100%);
+  }
+
+  body{
+    background: var(--gradient);
+  }
+
+  .welcome-screen {
+    position: fixed;
+    top: 56px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10;
+    background: var(--black);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 0.3s ease;
+  }
+
+  .welcome-content {
+    text-align: center;
+    max-width: 360px;
+    padding: 20px;
+  }
+
+  .welcome-greeting {
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--tan);
+    margin-bottom: 6px;
+  }
+
+  .welcome-sub {
+    font-size: 15px;
+    margin-bottom: 24px;
+    color: var(--light-gray);
+  }
+
+  .welcome-start {
+    background: var(--tan);
+    color: var(--black);
+    border: none;
+    border-radius: 999px;
+    padding: 12px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .welcome-input {
+    display: flex;
+    background: var(--light-gray);
+    border-radius: 999px;
+    padding: 8px 12px;
+    gap: 8px;
+  }
+
+  .welcome-input input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+  }
+
+  .welcome-input button {
+    background: var(--tan);
+    border: none;
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .chat-container {
+    background: var(--black);
+    width: 100%;
+    max-width: 900px;
+    height: 70vh;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--tan);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.6);
+  }
+
+  .chat-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--tan);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .chat-body {
+    padding: 12px;
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .chat-body::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  .chat-body::-webkit-scrollbar-thumb {
+    background: var(--tan);
+    border-radius: 5px;
+    border: 2px solid var(--black);
+  }
+
+  .chat-body::-webkit-scrollbar-thumb:hover {
+    background: var(--light-gray);
+  }
+
+  .message {
+    display: inline-block;
+    width: fit-content;
+    max-width: 75%;
+    flex-shrink: 0;
+    min-height: fit-content;
+    margin-bottom: 10px;
+    padding: 8px 12px;
+    border-radius: 12px;
+    font-size: 14px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    overflow-x: hidden;
+    overflow-y: visible;
+  }
+
+  .message.user {
+    align-self: flex-end;
+    background: var(--purple);
+    color: var(--light-gray);
+    border-bottom-right-radius: 4px;
+  }
+
+  .message.bot {
+    align-self: flex-start;
+    background: var(--teal);
+    color: var(--light-gray);
+    border-bottom-left-radius: 4px;
+  }
+
+  .message.typing {
+    background: transparent;
+    color: var(--light-gray);
+    font-style: italic;
+    padding: 6px 10px;
+    opacity: 0.8;
+  }
+
+  .typing-dots::after {
+    content: "";
+    animation: dots 1.5s infinite;
+  }
+
+  @keyframes dots {
+    0%   { content: ""; }
+    33%  { content: "."; }
+    66%  { content: ".."; }
+    100% { content: "..."; }
+  }
+
+  .chat-footer {
+    padding: 10px;
+    border-top: 1px solid var(--tan);
+    display: flex;
+    gap: 8px;
+  }
+
+  .chat-input {
+    flex: 1;
+    background: var(--teal);
+    color: var(--light-gray);
+    border-radius: 999px;
+    padding: 8px 12px;
+    display: flex;
+  }
+
+  .chat-input input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--light-gray);
+  }
+
+  .chat-input textarea {
+    flex: 1;
+    resize: none;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 14px;
+    line-height: 1.4;
+    max-height: 120px;
+    color: var(--light-gray);
+  }
+
+  .textarea::placeholder {
+    color: var(--light-gray);
+    opacity: 0.8;
+  }
+
+  .chat-input input::-webkit-scrollbar,
+  .chat-input textarea::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .chat-input input::-webkit-scrollbar-thumb,
+  .chat-input textarea::-webkit-scrollbar-thumb {
+    background: var(--teal);
+    border-radius: 5px;
+    border: 2px solid var(--teal);
+  }
+
+  .chat-input input::-webkit-scrollbar-track,
+  .chat-input textarea::-webkit-scrollbar-track {
+    background: var(--teal);
+  }
+
+  .send-button {
+    border: none;
+    border-radius: 999px;
+    padding: 8px 14px;
+    background: var(--tan);
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .send-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+</style>
+
+<!-- Welcome Screen -->
+
+<div id="welcomeScreen" class="welcome-screen">
+  <div class="welcome-content">
+    <h2 class="welcome-greeting">Good Day {{ user.first_name }}</h2>
+    <p class="welcome-sub">What can I help you with today?</p>
+
+    <button id="welcomeStart" class="welcome-start">
+      Start chatting →
+    </button>
+  </div>
+</div>
+
+<!-- Chat UI -->
+<div class="chat-container mt-4">
+  <div class="chat-header">
+    <strong style="color: var(--tan)">Solutionbot</strong>
+  </div>
+
+  <div id="chatBody" class="chat-body"></div>
+
+  <div class="chat-footer">
+    <div class="chat-input">
+      <textarea 
+        id="userInput" 
+        rows="1" 
+        placeholder="Type your message..." 
+      ></textarea>
+    </div>
+    <button id="sendButton" class="send-button">Send</button>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block javascript %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+  const welcomeScreen = document.getElementById("welcomeScreen");
+  const welcomeStart = document.getElementById("welcomeStart");
+  const chatBody = document.getElementById("chatBody");
+  const userInput = document.getElementById("userInput");
+  const sendButton = document.getElementById("sendButton");
+  const MIN_TYPING_TIME = 700;
+
+  function addMessage(text, sender) {
+    const msg = document.createElement("div");
+    msg.className = "message " + sender;
+    msg.textContent = text;
+    chatBody.appendChild(msg);
+    chatBody.scrollTop = chatBody.scrollHeight;
+  }
+
+  addMessage(
+    "Hi, I’m Solutionbot.\nAsk me anything when you’re ready.",
+    "bot"
+  );
+
+  let typingIndicator = null;
+
+  function showTypingIndicator() {
+    if (typingIndicator) return;
+
+    typingIndicator = document.createElement("div");
+    typingIndicator.className = "message bot typing";
+    typingIndicator.innerHTML =
+      '<span class="typing-dots">Solutionbot is typing</span>';
+
+    chatBody.appendChild(typingIndicator);
+    chatBody.scrollTop = chatBody.scrollHeight;
+  }
+
+  function hideTypingIndicator() {
+    if (typingIndicator) {
+      typingIndicator.remove();
+      typingIndicator = null;
+    }
+  }
+
+  async function handleSend() {
+    const text = userInput.value.trim();
+    if (!text) return;
+
+    addMessage(text, "user");
+    userInput.value = "";
+    sendButton.disabled = true;
+
+    const startTime = Date.now();
+    showTypingIndicator();
+
+    try {
+      const response = await fetch("{{ url_for('views.chat') }}", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text })
+      });
+
+      const data = await response.json();
+      const elapsed = Date.now() - startTime;
+      const remaining = Math.max(0, MIN_TYPING_TIME - elapsed);
+
+      setTimeout(() => {
+        hideTypingIndicator();
+        addMessage(data.reply, "bot");
+      }, remaining)
+
+    } catch (error) {
+      hideTypingIndicator();
+      addMessage("Server error. Please try again.", "bot");
+
+    } finally {
+      setTimeout(() => {
+        sendButton.disabled = false;
+        userInput.focus();
+      }, MIN_TYPING_TIME);
+    }  
+  }
+
+  userInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  });
+
+  sendButton.addEventListener("click", handleSend);
+
+  welcomeStart.addEventListener("click", () => {
+    welcomeScreen.style.opacity = "0";
+    setTimeout(() => {
+      welcomeScreen.remove();
+      userInput.focus();
+    }, 300);
+  });
+});
+</script>
+{% endblock %}
