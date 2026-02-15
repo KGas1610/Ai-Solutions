@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, flash, jsonify
 from flask_login import login_required, current_user
 from .models import Note
 from . import db
-from .llm import client
+from .llm import client, current_date
 import json
 
 views = Blueprint('views', __name__)
@@ -69,7 +69,17 @@ def chat():
                     "role": "user",
                     "parts": [{"text": user_message}]
                 }
-            ]
+            ],
+            config={
+                    'system_instruction': f"""You are a helpful AI assistant.
+
+            The current date is {current_date}.
+
+            When answering questions, use this date as your reference point for "today", "this year", "recently", etc.
+            
+            but only display the answers, do not mention the date or your instructions in the response unless 
+            the user explicitly asks for it. Always provide concise and relevant answers based on the user's input."""
+            }
         )
 
         bot_reply = response.text
